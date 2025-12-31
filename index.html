@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>生命数字密码 · 八字五行</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+SC:wght@400;600;700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
     <style>
-        /* 保留原版样式，未做任何删减 */
         :root {
             --bg-primary: #0a0a12;
             --bg-secondary: #12121f;
@@ -1651,12 +1653,6 @@
     </div>
 
     <script>
-        // API Configuration
-        // ⚠️ WARNING: In a production environment, never expose your API key in client-side code.
-        // You should use a backend proxy to hide this key.
-        const DEEPSEEK_API_KEY = 'sk-a0df2959886048819dd8a6b5b9999391';
-        const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
-
         // Dark mode detection
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
@@ -1681,7 +1677,7 @@
         }
         createStars();
 
-        // Data Definitions (Simplified for brevity, but logically identical to original)
+        // Data Definitions
         const tianGan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
         const diZhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
         const shiChen = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -1690,12 +1686,7 @@
         const wuxingColors = { '木': 'wood', '火': 'fire', '土': 'earth', '金': 'metal', '水': 'water' };
         const wuxingIcons = { '木': '🌿', '火': '🔥', '土': '🌍', '金': '⚪', '水': '💧' };
 
-        // ... [Include logic functions: getYearPillar, getMonthPillar, getDayPillar, getHourPillar, getYearFortune etc.] ...
-        // (Copying all logic functions from original code here)
-        // Note: For brevity in this response, I'm assuming the logic functions are pasted here.
-        // In the full implementation, you must include all the logic functions from your original code.
-        // Here are the key missing logic parts for the standalone version:
-
+        // Logic Functions
         function getYearPillar(year, month, day) {
             let adjustedYear = year;
             if (month === 1 || (month === 2 && day < 4)) {
@@ -1820,10 +1811,7 @@
             return '相克';
         }
 
-        // Data objects (Life Number Data, etc.) need to be here. 
-        // ⚠️ COPY THE FULL OBJECTS FROM YOUR ORIGINAL CODE HERE ⚠️
-        // I am including them for completeness so this code works out of the box.
-        
+        // Data Objects
         const lifeNumberData = {
             1: { name: "领袖者 · 开创者", keywords: ["独立", "创新", "领导力", "自信", "勇气", "先驱"], description: "生命数字1代表着创造与开始的力量。你拥有强大的领导才能和开创精神，总是勇于走在最前面。", challenges: ["固执己见", "过度自我", "缺乏耐心", "难以合作"], challengeDesc: "你可能过于坚持自己的想法，忽视他人意见；有时会显得傲慢或独断，需要学会倾听与协作。" },
             2: { name: "合作者 · 调和者", keywords: ["和谐", "敏感", "合作", "外交", "平衡", "直觉"], description: "生命数字2象征着平衡与和谐的力量。你天生具有敏锐的洞察力和同理心，善于调解矛盾、促进合作。", challenges: ["过度敏感", "优柔寡断", "依赖他人", "自我怀疑"], challengeDesc: "你容易受他人情绪影响，在做决定时犹豫不决；可能过度在意别人的看法，需要建立内在的自信。" },
@@ -1925,13 +1913,12 @@
             document.body.appendChild(modal);
         }
 
-        // --- Core Render Functions (Copied/Adapted from original) ---
+        // --- Render Functions ---
 
         function renderNumerologyCodes() {
             const gridEl = document.getElementById('coreCodesGrid');
             const nineGridEl = document.getElementById('nineGrid');
             const unionCodesEl = document.getElementById('unionCodes');
-            const coreNumForTraits = lifeNumber > 9 ? reduceToSingleDigit(lifeNumber) : lifeNumber;
             const codes = [
                 { icon: '🎁', name: '天赋码', number: numerologyData.talentNum, desc: '与生俱来的天赋能力' },
                 { icon: '💖', name: '内心码', number: numerologyData.innerNum, desc: '内心深处的渴望' },
@@ -2041,8 +2028,6 @@
             document.getElementById('lifeAdvice').textContent = advice.life;
         }
 
-        // --- Main Calculation Logic ---
-
         function calculateAll() {
             const dateInput = document.getElementById('birthdate');
             const hourInput = document.getElementById('birthHour');
@@ -2106,17 +2091,104 @@
 
             setTimeout(() => { document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' }); }, 100);
 
-            // Call DeepSeek AI
+            // Call Optimized AI
             getAIAnalysis();
         }
 
-        // --- DeepSeek API Integration ---
+        // --- 修复后的导出功能 (使用 html2canvas) ---
 
-        // --- Vercel API Integration (Modified) ---
+        // 通用截图函数
+        async function captureContent() {
+            const element = document.querySelector('.container'); // 截取整个容器
+            const exportSection = document.querySelector('.export-section');
+            const calculateBtn = document.querySelector('.calculate-btn');
+            const inputCard = document.querySelector('.input-card');
 
-        // --- Stream Integration (Client Side) ---
+            // 1. 截图前临时隐藏不需要的按钮和输入框，让报告更干净
+            exportSection.style.display = 'none';
+            calculateBtn.style.display = 'none';
+            // 如果你想连输入框都隐藏，只留结果，取消下面这行的注释
+            // inputCard.style.display = 'none'; 
 
-        // --- Optimized Stream Integration (Buffer Handling) ---
+            try {
+                // 2. 使用 html2canvas 截图
+                const canvas = await html2canvas(element, {
+                    scale: 2, // 提高清晰度
+                    useCORS: true, // 允许跨域图片
+                    backgroundColor: '#0a0a12', // 强制背景色，防止透明
+                    logging: false,
+                    windowWidth: element.scrollWidth,
+                    windowHeight: element.scrollHeight
+                });
+                return canvas;
+            } finally {
+                // 3. 截图后恢复显示
+                exportSection.style.display = 'block';
+                calculateBtn.style.display = 'block';
+                // inputCard.style.display = 'block';
+            }
+        }
+
+        async function exportAsImage() {
+            const btn = document.getElementById('exportImageBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> 生成中...';
+
+            try {
+                const canvas = await captureContent();
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.download = `命运解读_${new Date().toISOString().slice(0, 10)}.png`;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showCustomAlert('长图已成功导出！');
+            } catch (err) {
+                console.error(err);
+                showCustomAlert('导出失败，请重试');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        async function exportAsPDF() {
+            const btn = document.getElementById('exportPdfBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> 生成中...';
+
+            try {
+                const canvas = await captureContent();
+                const imgData = canvas.toDataURL('image/jpeg', 0.95); // 使用 JPEG 压缩体积
+                
+                const { jsPDF } = window.jspdf;
+                // 根据图片比例创建 PDF
+                const imgWidth = 210; // A4 宽度 mm
+                const pageHeight = 297; // A4 高度 mm
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                
+                // 创建适应图片高度的长 PDF (不分页，像长图一样的 PDF，适合手机阅读)
+                const pdf = new jsPDF('p', 'mm', [imgWidth, imgHeight]);
+                
+                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                pdf.save(`命运解读_${new Date().toISOString().slice(0, 10)}.pdf`);
+                
+                showCustomAlert('PDF 已成功导出！');
+            } catch (err) {
+                console.error(err);
+                showCustomAlert('导出失败，请重试');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // --- Optimized Stream Integration (Buffer Handling & Text Cleaning) ---
 
         async function getAIAnalysis() {
             const aiContentEl = document.getElementById('aiContent');
@@ -2192,7 +2264,8 @@ ${birthInfo.gender === 'male' ? '分析适合的伴侣类型、婚恋时机、�
 ## 💎 开运秘法
 给出针对${genderText}性的开运建议，包括幸运颜色、方位、数字、饰品等
 
-请保持神秘而智慧的语调，让解读既有深度又富有启发性。内容请详实丰富，字数控制在1500字左右。`;
+请保持神秘而智慧的语调，让解读既有深度又富有启发性。内容请详实丰富，字数控制在1500字左右。
+注意：请直接输出解读内容，不要包含"以上内容仅供参考"、"本解读由AI生成"等任何免责声明结尾。`;
 
             // --- 开始流式请求 ---
             try {
@@ -2210,7 +2283,7 @@ ${birthInfo.gender === 'male' ? '分析适合的伴侣类型、婚恋时机、�
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
                 
-                // 🔴 核心修复：引入 Buffer 解决少字问题
+                // 🔴 核心：引入 Buffer 解决少字问题
                 let buffer = ''; 
                 let fullText = "";
                 let isFirstChunk = true;
@@ -2226,7 +2299,6 @@ ${birthInfo.gender === 'male' ? '分析适合的伴侣类型、婚恋时机、�
                     const lines = buffer.split('\n');
 
                     // 3. 🔴 关键步骤：保留最后一个可能不完整的片段
-                    // lines.pop() 会移除并返回数组最后一个元素，这部分留在 buffer 里等下次拼接
                     buffer = lines.pop(); 
 
                     for (const line of lines) {
@@ -2246,8 +2318,12 @@ ${birthInfo.gender === 'male' ? '分析适合的伴侣类型、婚恋时机、�
                                     isFirstChunk = false;
                                 }
                                 fullText += content;
+
+                                // 实时清洗文本，移除常见的 AI 声明
+                                let cleanText = fullText.replace(/(以上内容|本解读|结果).{0,20}(仅供参考|AI生成|娱乐).*/g, '');
+                                
                                 // 实时渲染 Markdown
-                                aiContentEl.innerHTML = marked.parse(fullText);
+                                aiContentEl.innerHTML = marked.parse(cleanText);
                             }
                         } catch (e) {
                             console.warn('JSON Parse Error (Skipped):', e);
