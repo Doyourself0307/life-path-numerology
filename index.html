@@ -2097,35 +2097,119 @@
 
         // --- 修复后的导出功能 (使用 html2canvas) ---
 
+        // --- 针对 iOS 优化的导出功能 ---
+
         // 通用截图函数
         async function captureContent() {
-            const element = document.querySelector('.container'); // 截取整个容器
+            const element = document.querySelector('.container'); 
+            
+            // 获取需要临时隐藏的元素
             const exportSection = document.querySelector('.export-section');
             const calculateBtn = document.querySelector('.calculate-btn');
-            const inputCard = document.querySelector('.input-card');
+            const bgStars = document.querySelector('.stars');     // 获取星星背景
+            const bgCosmic = document.querySelector('.cosmic-bg'); // 获取星云背景
 
-            // 1. 截图前临时隐藏不需要的按钮和输入框，让报告更干净
+            // 1. 截图前隐藏按钮和复杂背景（关键：去掉复杂背景能解决变黑问题）
             exportSection.style.display = 'none';
             calculateBtn.style.display = 'none';
-            // 如果你想连输入框都隐藏，只留结果，取消下面这行的注释
-            // inputCard.style.display = 'none'; 
+            if(bgStars) bgStars.style.display = 'none';
+            if(bgCosmic) bgCosmic.style.display = 'none';
+
+            // 检测是否为 iOS 设备
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            
+            // iOS 设备内存有限，使用 1.5 倍或 1 倍缩放；电脑/安卓使用 2 倍
+            const scaleFactor = isIOS ? 1.5 : 2; 
 
             try {
                 // 2. 使用 html2canvas 截图
                 const canvas = await html2canvas(element, {
-                    scale: 2, // 提高清晰度
-                    useCORS: true, // 允许跨域图片
-                    backgroundColor: '#0a0a12', // 强制背景色，防止透明
+                    scale: scaleFactor, 
+                    useCORS: true,
+                    // 强制指定深色背景色，防止透明变黑
+                    backgroundColor: '#0a0a12', 
                     logging: false,
-                    windowWidth: element.scrollWidth,
-                    windowHeight: element.scrollHeight
+                    // 关键：手动指定宽高，防止iOS计算错误
+                    width: element.offsetWidth,
+                    height: element.scrollHeight,
+                    windowWidth: document.documentElement.offsetWidth,
+                    windowHeight: document.documentElement.scrollHeight,
+                    // 忽略跨域图片污染
+                    allowTaint: true 
                 });
                 return canvas;
             } finally {
                 // 3. 截图后恢复显示
                 exportSection.style.display = 'block';
                 calculateBtn.style.display = 'block';
-                // inputCard.style.display = 'block';
+                if(bgStars) bgStars.style.display = 'block';
+                if(bgCosmic) bgCosmic.style.display = 'block';
+            }
+        }
+
+        async function exportAsImage() {
+            const btn = document.getElementById('exportImageBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> 处理中...';
+
+            try {
+                const canvas = await captureContent();
+                
+                // 移动端友好处理：转换成 Blob
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = `命运解读_${new Date().toISOString().slice(0, 10)}.png`;
+                    link.href = url;
+                    
+                    // 触发下载
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // 释放内存
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    
+                    showCustomAlert('长图已生成！如果未自动下载，请长按保存。');
+                }, 'image/png');
+
+            } catch (err) {
+                console.error(err);
+                showCustomAlert('导出失败，可能是内容太长导致内存不足。');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        async function exportAsPDF() {
+            const btn = document.getElementById('exportPdfBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> 处理中...';
+
+            try {
+                const canvas = await captureContent();
+                // 使用 JPEG 格式并降低质量到 0.8，大幅减少体积，防止崩溃
+                const imgData = canvas.toDataURL('image/jpeg', 0.8); 
+                
+                const { jsPDF } = window.jspdf;
+                const imgWidth = 210; // A4 宽度
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                
+                const pdf = new jsPDF('p', 'mm', [imgWidth, imgHeight]);
+                
+                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                pdf.save(`命运解读_${new Date().toISOString().slice(0, 10)}.pdf`);
+                
+                showCustomAlert('PDF 已生成！');
+            } catch (err) {
+                console.error(err);
+                showCustomAlert('导出失败，请重试');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         }
 
@@ -2264,7 +2348,7 @@ ${birthInfo.gender === 'male' ? '分析适合的伴侣类型、婚恋时机、�
 ## 💎 开运秘法
 给出针对${genderText}性的开运建议，包括幸运颜色、方位、数字、饰品等
 
-请保持神秘而智慧的语调，让解读既有深度又富有启发性。内容请详实丰富，字数控制在2000字左右。
+请保持神秘而智慧的语调，让解读既有深度又富有启发性。内容请详实丰富，字数控制在1500字左右。
 注意：请直接输出解读内容，不要包含"以上内容仅供参考"、"本解读由AI生成"等任何免责声明结尾。`;
 
             // --- 开始流式请求 ---
@@ -2338,5 +2422,4 @@ ${birthInfo.gender === 'male' ? '分析适合的伴侣类型、婚恋时机、�
         }
     </script>
 </body>
-
 </html>
